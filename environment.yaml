@@ -9,6 +9,10 @@ dependencies:
   - matplotlib
   - ipympl
   - tqdm
+  - pytest
+  - coverage
+  - hypothesis
+  # - mpl-interactions
   # - plotly
   # - ipywidgets >=7.6
   # - jupyter-dash

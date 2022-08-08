@@ -1,0 +1,111 @@
+
+from sys import float_info
+from scipy import spatial
+import numpy as np
+from ipywidgets import widgets
+from traitlets import Float, HasTraits
+from typing import Tuple
+
+widgets.jslink
+
+class Point(widgets.Text):
+    x = Float()
+    y = Float()
+    
+    def __init__(self, x, y, *args, **kwargs):
+        super(Point, self).__init__(*args, **kwargs)
+        self.x = x
+        self.y = y
+        self.observe(self._update, names=['x', 'y', 'value'])
+        self.value = f'{x},{y}'
+        
+        
+    def _update(self, change):
+        print(change)
+        if change['name'] == 'value':
+            x,y = self.value.split(',')
+            self.x = float(x)
+            self.y = float(y)
+        if change['name'] == 'x' or change['name'] == 'y':
+            self.value = f'{self.x},{self.y}'
+        
+class LinearFace(HasTraits):
+    rect_angle = Float()
+    
+    def __init__(self, x1=0, y1=0, x2=1, y2=1, length=10, width=2):
+        self.p1 = Point(0,0, description="p0")
+        self.p2 = Point(0,0, description="p1")
+        self.length = widgets.Text(description="Length", value=str(length))
+        self.width = widgets.Text(description="Width", value=str(width))
+        # self.midpoint = some_math.Point(*some_math.midpoint(self.p1, self.p2), description="midpoint")
+        # self.rect_origin = some_math.Point(0,0, description="rect origin")
+        self.midpoint = Point(0,0, description="midpoint")
+        self.rect_origin = Point(0,0, description="rect origin")
+        self.widg_rect_angle = widgets.Label(value="")
+        
+        self.inputs = [self.p1, self.p2, self.length, self.width]
+        self.derived = [widgets.Label("Derived"), self.midpoint, self.rect_origin, self.widg_rect_angle]
+        self.layout = widgets.HBox([
+            widgets.VBox([widgets.Label("Inputs")] + self.inputs),
+            widgets.VBox(self.derived),
+        ])
+        
+        # wire up interactivity
+        for widg in self.inputs:
+            widg.observe(self._update_derived, names='value')
+            
+        self.observe(self._update_rect_angle, names=['rect_angle'])
+            
+        self.p1.x, self.p1.y = x1, y1
+        self.p2.x, self.p2.y = x2, y2
+        
+    def _update_derived(self,change):
+        print(change)
+        self.midpoint.x, self.midpoint.y = midpoint(self.p1, self.p2)
+        # origin of rectangle should be "upstream" of the midpoint, so we reverse the point vector
+        r, th = to_polar(self.p2, self.p1)
+        self.rect_angle = th
+        x, y = distance_polar(self.midpoint, float(self.width.value), th)
+        self.rect_origin.x, self.rect_origin.y = x,y
+    
+    def _update_rect_angle(self, change):
+        self.widg_rect_angle.value = f'rectangle rotation: {self.rect_angle} rad'
+    
+        
+#     def _update_rectangle(self, change):
+#         x,y = self._compute_midpoint()
+#         width = float(self.width.value)
+#         length = float(self.length.value)
+#         p1 = 
+        
+
+## point functions
+def to_polar(p1: Point, p2: Point) -> Tuple[float, float]:
+    """Compute r and theta from p1, p2"""
+    r = distance(p1, p2)
+    theta = angle(p1, p2)
+    return r, theta
+
+def distance(p1: Point, p2: Point) -> float:
+    return spatial.distance.euclidean(
+        (p1.x, p1.y), (p2.x, p2.y))
+
+def angle(p1: Point, p2: Point) -> float:
+    th = np.arctan2((p2.y-p1.y), (p2.x-p1.x))
+    return th
+
+def angle_degrees(p1: Point, p2: Point) -> float:
+    a = angle(p1, p2)
+    return a * 180 / np.pi
+    
+
+def midpoint(p1: Point, p2: Point) -> Tuple[float, float]: 
+    xm = (p1.x + p2.x) / 2
+    ym = (p1.y + p2.y) / 2
+    return (xm,ym)
+
+
+def distance_polar(p: Point, r: float, th: float) -> Tuple[float, float]:
+    x = r * np.cos(th) + p.x
+    y = r * np.sin(th) + p.y
+    return x, y
