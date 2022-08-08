@@ -12,6 +12,8 @@ dependencies:
   - pytest
   - coverage
   - hypothesis
+  - pip:
+    - random-word
   # - mpl-interactions
   # - plotly
   # - ipywidgets >=7.6

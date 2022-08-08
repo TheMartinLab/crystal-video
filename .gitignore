@@ -2,3 +2,4 @@ data/
 .ipynb_checkpoints/
 .hypothesis
 __pycache__
+.coverage

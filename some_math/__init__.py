@@ -1,12 +1,26 @@
 
+from importlib.machinery import WindowsRegistryFinder
+from importlib.resources import path
 from sys import float_info
 from scipy import spatial
+import string
+import random
 import numpy as np
 from ipywidgets import widgets
 from traitlets import Float, HasTraits
 from typing import Tuple
+import random_word
+import pathlib
 
-widgets.jslink
+WORDS = []
+compounds = ['CZX-1', 'ZnCl2', 'CuCl', 'halozeotype', 'amine', 'hydrate']
+
+def word_pair():
+    global WORDS
+    if not WORDS:
+        p = pathlib.Path(__file__).absolute().parent.parent / 'english-adjectives.txt'
+        WORDS = open(p, 'r').read().split('\n')
+    return f'{random.choice(WORDS)} {random.choice(compounds)}'
 
 class Point(widgets.Text):
     x = Float()
@@ -28,7 +42,11 @@ class Point(widgets.Text):
             self.y = float(y)
         if change['name'] == 'x' or change['name'] == 'y':
             self.value = f'{self.x},{self.y}'
-        
+
+_LETTERS_AND_DIGITS = string.ascii_lowercase[:6] + string.digits
+def random_hex_color():
+    return '#' + ''.join(random.choices(_LETTERS_AND_DIGITS, k=6))
+
 class LinearFace(HasTraits):
     rect_angle = Float()
     
@@ -42,16 +60,22 @@ class LinearFace(HasTraits):
         self.midpoint = Point(0,0, description="midpoint")
         self.rect_origin = Point(0,0, description="rect origin")
         self.widg_rect_angle = widgets.Label(value="")
+        self.color_picker = widgets.ColorPicker(
+            description='line',
+            value=random_hex_color()
+        )
+        self.name = widgets.Text(description="name", value=word_pair())
         
-        self.inputs = [self.p1, self.p2, self.length, self.width]
+        recompute = [self.p1, self.p2, self.length, self.width]
+        self.redraw = recompute + [self.color_picker]
         self.derived = [widgets.Label("Derived"), self.midpoint, self.rect_origin, self.widg_rect_angle]
         self.layout = widgets.HBox([
-            widgets.VBox([widgets.Label("Inputs")] + self.inputs),
+            widgets.VBox([widgets.Label("Inputs")] + self.redraw + [self.name]),
             widgets.VBox(self.derived),
         ])
         
         # wire up interactivity
-        for widg in self.inputs:
+        for widg in recompute:
             widg.observe(self._update_derived, names='value')
             
         self.observe(self._update_rect_angle, names=['rect_angle'])
