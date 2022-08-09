@@ -235,3 +235,45 @@ def imshow_with_patches(ax, data, patches: dict):
         print(f"Adding patch for {patch_name}")
         added_patches[patch_name] = ax.add_patch(patch)
     return im, added_patches
+
+
+def make_coords_array(arr):
+    x = np.arange(0, arr.shape[1], step=1)
+    y = np.arange(0, arr.shape[0], step=1)
+    x_arr = np.zeros(shape=arr.shape, dtype=int)
+    y_arr = np.zeros(shape=arr.shape, dtype=int)
+    x_arr[:] = x
+    y_arr.T[:] = y
+    coords = np.zeros(shape=(x_arr.ravel().shape[0], 2), dtype=int)
+    coords[:, 0] = x_arr.ravel()
+    coords[:, 1] = y_arr.ravel()
+    return coords
+
+
+def zero_outside_patch(image_data, patch):
+    coords = make_coords_array(image_data)
+    transformed_coords = patch.axes.transData.transform(coords)
+    within_patch = patch.contains_points(transformed_coords)
+    # reshape the boolean mask to be the same shape as the image data
+    within_patch.shape = image_data.shape
+    im2 = image_data.copy()
+    im2[~within_patch] = 0
+    return im2
+
+
+def make_image_mask(image_data, patch):
+    coords = make_coords_array(image_data)
+    transformed_coords = patch.axes.transData.transform(coords)
+    within_patch = patch.contains_points(transformed_coords)
+    # reshape the boolean mask to be the same shape as the image data
+    within_patch.shape = image_data.shape
+    return within_patch
+
+
+def extract_pixels_xyi(image_data, patch):
+    mask = make_image_mask(image_data, patch)
+    I = image_data[mask]
+    coords = make_coords_array(image_data)
+    X = coords[..., 0].reshape(image_data.shape)[mask]
+    Y = coords[..., 1].reshape(image_data.shape)[mask]
+    return X, Y, I
