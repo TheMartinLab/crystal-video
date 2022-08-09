@@ -6,6 +6,8 @@ from . import (
     to_polar,
     midpoint,
     distance_polar,
+    imshow_with_patches,
+    mpl_rect_patch,
 )
 import matplotlib.pyplot as plt
 import numpy as np
@@ -93,8 +95,8 @@ def test_line_thing():
     x0, y0 = 0, 0
     x1, y1 = 2, 4
     width = np.sqrt((x1 / 2) ** 2 + (y1 / 2) ** 2)
-    length = 10
-    lf = LinearFace(x0, y0, x1, y1, length=length, width=width)
+    height = 10
+    lf = LinearFace(x0, y0, x1, y1, height=height, width=width)
 
     assert lf.midpoint.x == pytest.approx(x1 / 2)
     assert lf.midpoint.y == pytest.approx(y1 / 2)
@@ -104,4 +106,14 @@ def test_line_thing():
 
 def test_imshow_with_patches():
     fig, ax = plt.subplots()
-    
+    x = 50
+    y = 50
+    w = 10
+    h = 10
+    rot = 0
+    color = "blue"
+
+    patch = mpl_rect_patch(axes=ax, x=x, y=y, width=w, height=h, rot=rot, color=color)
+    data = np.random.randn(100, 100)
+    im, added_patches = imshow_with_patches(ax, data, {"test": patch})
+    assert len(ax.patches) == 1
