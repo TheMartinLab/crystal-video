@@ -103,9 +103,9 @@ class LinearFace(traitlets.HasTraits):
             description="line", value=random_hex_color()
         )
         self.name = widgets.Text(description="name", value=word_pair(), disabled=True)
-
+        self.offset = widgets.Text(description='offset', value='0')
         recompute = [self.p1, self.p2, self.height, self.width]
-        self.redraw = recompute + [self.color_picker]
+        self.redraw = [self.offset] + recompute + [self.color_picker]
         self.derived = [
             widgets.Label("Derived"),
             self.midpoint,
@@ -122,12 +122,25 @@ class LinearFace(traitlets.HasTraits):
         # wire up interactivity
         for widg in recompute:
             widg.observe(self._update_derived, names="value")
-
+        self.offset.observe(self._update_points, names=['value'])
         self.observe(self._update_angle, names=["text_angle"])
         self.text_angle.observe(self._update_angle, names=["value"])
 
         self.p1.x, self.p1.y = x1, y1
         self.p2.x, self.p2.y = x2, y2
+
+    def _update_points(self, change):
+        offset = int(self.offset.value)
+        orig_angle = angle(self.p1, self.p2)
+        new_p1_x, new_p1_y = distance_polar(self.p1, offset, orig_angle + np.pi/2)
+        new_p2_x, new_p2_y = distance_polar(self.p2, offset, orig_angle + np.pi/2)
+        with self.hold_trait_notifications():
+            self.p1.x = new_p1_x
+            self.p1.y = new_p1_y
+            self.p2.x = new_p2_x
+            self.p2.y = new_p2_y
+        self._update_derived({})
+        
 
     def _update_derived(self, change):
         print(change)
