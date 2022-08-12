@@ -103,9 +103,10 @@ class LinearFace(traitlets.HasTraits):
             description="line", value=random_hex_color()
         )
         self.name = widgets.Text(description="name", value=word_pair(), disabled=True)
-        self.offset = widgets.Text(description='offset', value='0')
+        self.offset_x = widgets.Text(description='offset x', value='0')
+        self.offset_y = widgets.Text(description='offset y', value='0')
         recompute = [self.p1, self.p2, self.height, self.width]
-        self.redraw = [self.offset] + recompute + [self.color_picker]
+        self.redraw = [self.offset_x, self.offset_y] + recompute + [self.color_picker]
         self.derived = [
             widgets.Label("Derived"),
             self.midpoint,
@@ -122,7 +123,8 @@ class LinearFace(traitlets.HasTraits):
         # wire up interactivity
         for widg in recompute:
             widg.observe(self._update_derived, names="value")
-        self.offset.observe(self._update_points, names=['value'])
+        self.offset_x.observe(self._update_points, names=['value'])
+        self.offset_y.observe(self._update_points, names=['value'])
         self.observe(self._update_angle, names=["text_angle"])
         self.text_angle.observe(self._update_angle, names=["value"])
 
@@ -130,10 +132,14 @@ class LinearFace(traitlets.HasTraits):
         self.p2.x, self.p2.y = x2, y2
 
     def _update_points(self, change):
-        offset = int(self.offset.value)
+        print(change)
+        name = change['owner'].description
+        offset = int(change['new'])
         orig_angle = angle(self.p1, self.p2)
-        new_p1_x, new_p1_y = distance_polar(self.p1, offset, orig_angle + np.pi/2)
-        new_p2_x, new_p2_y = distance_polar(self.p2, offset, orig_angle + np.pi/2)
+        if name == 'offset x':
+            orig_angle += np.pi / 2
+        new_p1_x, new_p1_y = distance_polar(self.p1, offset, orig_angle)
+        new_p2_x, new_p2_y = distance_polar(self.p2, offset, orig_angle)
         with self.hold_trait_notifications():
             self.p1.x = new_p1_x
             self.p1.y = new_p1_y
