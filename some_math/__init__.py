@@ -281,6 +281,8 @@ def zero_outside_patch(image_data, patch):
 
 
 def make_image_mask(image_data, patch):
+    """Convert the matplotlib patch into a numpy array where inside the shape
+    is True and outside the mask is False"""
     coords = make_coords_array(image_data)
     transformed_coords = patch.axes.transData.transform(coords)
     within_patch = patch.contains_points(transformed_coords)
